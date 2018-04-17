@@ -44,6 +44,9 @@ from libnmea_navsat_driver.checksum_utils import check_nmea_checksum
 import libnmea_navsat_driver.parser
 
 
+import builtin_interfaces.msg
+
+
 class RosNMEADriver(rclpy.node.Node):
     def __init__(self, time_ref_source, use_RMC):
         super().__init__('RosNMEADriver')
@@ -53,6 +56,12 @@ class RosNMEADriver(rclpy.node.Node):
 
         self.time_ref_source = time_ref_source
         self.use_RMC = use_RMC
+
+    @staticmethod
+    def create_time(s): # TODO replace with rclutils time when available 
+      sec = math.floor(now)
+      nsec = round((s - sec) * 10e9)
+      return builtin_interfaces.msg.Time(sec, nsec)
 
     # Returns True if we successfully did something with the passed in
     # nmea_string
@@ -72,10 +81,10 @@ class RosNMEADriver(rclpy.node.Node):
         else:
             current_time =  time.monotonic() # TODO2 use ros2
         current_fix = NavSatFix()
-        current_fix.header.stamp = current_time
+        current_fix.header.stamp = RosNMEADriver.create_time(current_time)
         current_fix.header.frame_id = frame_id
         current_time_ref = TimeReference()
-        current_time_ref.header.stamp = current_time
+        current_time_ref.header.stamp = RosNMEADriver.create_time(current_time)
         current_time_ref.header.frame_id = frame_id
         if self.time_ref_source:
             current_time_ref.source = self.time_ref_source
@@ -128,7 +137,7 @@ class RosNMEADriver(rclpy.node.Node):
             self.fix_pub.publish(current_fix)
 
             if not math.isnan(data['utc_time']):
-                current_time_ref.time_ref =  data['utc_time']
+                current_time_ref.time_ref =  RosNMEADriver.create_time(data['utc_time'])
                 self.time_ref_pub.publish(current_time_ref)
 
         elif 'RMC' in parsed_sentence:
@@ -160,7 +169,7 @@ class RosNMEADriver(rclpy.node.Node):
                 self.fix_pub.publish(current_fix)
 
                 if not math.isnan(data['utc_time']):
-                    current_time_ref.time_ref = data['utc_time']
+                    current_time_ref.time_ref = RosNMEADriver.create_time(data['utc_time'])
                     self.time_ref_pub.publish(current_time_ref)
 
             # Publish velocity from RMC regardless, since GGA doesn't provide it.
