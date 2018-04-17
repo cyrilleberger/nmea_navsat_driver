@@ -35,6 +35,8 @@ import math
 import rclpy
 import rclpy.node
 
+import time # TODO replace with rclutils time when available
+
 from sensor_msgs.msg import NavSatFix, NavSatStatus, TimeReference
 from geometry_msgs.msg import TwistStamped
 
