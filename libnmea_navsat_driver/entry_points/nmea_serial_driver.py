@@ -42,17 +42,18 @@ def nmea_serial_driver():
 
     import libnmea_navsat_driver.driver
     
-    rclpy.init()
-    
     parser = argparse.ArgumentParser(description='driver for nmea GPS.')
 
-    parser.add_argument('--baud', type=int, nargs=1, default=4800)
-    parser.add_argument('--port', type=str, nargs=1, default='/dev/ttyUSB0')
-    parser.add_argument('--frame_id', type=str, nargs=1, default='gps')
-    parser.add_argument('--time_ref_source', type=str, nargs=1, default=None)
+    parser.add_argument('--baud', type=int, default=4800)
+    parser.add_argument('--port', type=str, default='/dev/ttyUSB0')
+    parser.add_argument('--frame_id', type=str, default='gps')
+    parser.add_argument('--time_ref_source', type=str, default=None)
     parser.add_argument('--useRMC', action='store_true', default=False)
+    parser.add_argument('rosargs', type=str, nargs='+')
 
     args = parser.parse_args()
+    
+    rclpy.init(args=args.rosargs)
 
     serial_port = args.port
     serial_baud = args.baud
