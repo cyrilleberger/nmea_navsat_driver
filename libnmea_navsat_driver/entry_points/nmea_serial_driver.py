@@ -65,7 +65,7 @@ def nmea_serial_driver():
     while rclpy.utilities.ok():
         data = GPS.readline().strip()
         try:
-            driver.add_sentence(data, frame_id)
+            driver.add_sentence(data.decode('ascii'), frame_id)
             rclpy.spin_once(driver)
         except ValueError as e:
             driver.get_logger().warn("Value error, likely due to missing fields in the NMEA message. Error was: %s. Please report this issue at github.com/ros-drivers/nmea_navsat_driver, including a bag file with the NMEA sentences that caused it." % e)
