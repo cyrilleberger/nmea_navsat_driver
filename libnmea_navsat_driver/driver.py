@@ -32,7 +32,8 @@
 
 import math
 
-import rospy
+import rclpy
+import rclpy.node
 
 from sensor_msgs.msg import NavSatFix, NavSatStatus, TimeReference
 from geometry_msgs.msg import TwistStamped
@@ -41,32 +42,33 @@ from libnmea_navsat_driver.checksum_utils import check_nmea_checksum
 import libnmea_navsat_driver.parser
 
 
-class RosNMEADriver(object):
-    def __init__(self):
-        self.fix_pub = rospy.Publisher('fix', NavSatFix, queue_size=1)
-        self.vel_pub = rospy.Publisher('vel', TwistStamped, queue_size=1)
-        self.time_ref_pub = rospy.Publisher('time_reference', TimeReference, queue_size=1)
+class RosNMEADriver(rclpy.node.Node):
+    def __init__(self, time_ref_source, use_RMC):
+        super().__init__('RosNMEADriver')
+        self.fix_pub = self.create_publisher(NavSatFix, 'fix')
+        self.vel_pub = self.create_publisher(TwistStamped, 'vel')
+        self.time_ref_pub = self.create_publisher(TimeReference, 'time_reference')
 
-        self.time_ref_source = rospy.get_param('~time_ref_source', None)
-        self.use_RMC = rospy.get_param('~useRMC', False)
+        self.time_ref_source = time_ref_source
+        self.use_RMC = use_RMC
 
     # Returns True if we successfully did something with the passed in
     # nmea_string
     def add_sentence(self, nmea_string, frame_id, timestamp=None):
         if not check_nmea_checksum(nmea_string):
-            rospy.logwarn("Received a sentence with an invalid checksum. " +
+            self.get_logger().warn("Received a sentence with an invalid checksum. " +
                           "Sentence was: %s" % repr(nmea_string))
             return False
 
         parsed_sentence = libnmea_navsat_driver.parser.parse_nmea_sentence(nmea_string)
         if not parsed_sentence:
-            rospy.logdebug("Failed to parse NMEA sentence. Sentece was: %s" % nmea_string)
+            self.get_logger().debug("Failed to parse NMEA sentence. Sentece was: %s" % nmea_string)
             return False
 
         if timestamp:
             current_time = timestamp
         else:
-            current_time = rospy.get_rostime()
+            current_time =  time.monotonic() # TODO2 use ros2
         current_fix = NavSatFix()
         current_fix.header.stamp = current_time
         current_fix.header.frame_id = frame_id
@@ -124,7 +126,7 @@ class RosNMEADriver(object):
             self.fix_pub.publish(current_fix)
 
             if not math.isnan(data['utc_time']):
-                current_time_ref.time_ref = rospy.Time.from_sec(data['utc_time'])
+                current_time_ref.time_ref =  data['utc_time']
                 self.time_ref_pub.publish(current_time_ref)
 
         elif 'RMC' in parsed_sentence:
@@ -156,7 +158,7 @@ class RosNMEADriver(object):
                 self.fix_pub.publish(current_fix)
 
                 if not math.isnan(data['utc_time']):
-                    current_time_ref.time_ref = rospy.Time.from_sec(data['utc_time'])
+                    current_time_ref.time_ref = data['utc_time']
                     self.time_ref_pub.publish(current_time_ref)
 
             # Publish velocity from RMC regardless, since GGA doesn't provide it.
@@ -175,16 +177,16 @@ class RosNMEADriver(object):
     """Helper method for getting the frame_id with the correct TF prefix"""
 
     @staticmethod
-    def get_frame_id():
-        frame_id = rospy.get_param('~frame_id', 'gps')
-        if frame_id[0] != "/":
-            """Add the TF prefix"""
-            prefix = ""
-            prefix_param = rospy.search_param('tf_prefix')
-            if prefix_param:
-                prefix = rospy.get_param(prefix_param)
-                if prefix[0] != "/":
-                    prefix = "/%s" % prefix
-            return "%s/%s" % (prefix, frame_id)
-        else:
+    def get_frame_id(frame_id):
+        # TODO port to ROS2
+        #if frame_id[0] != "/":
+            #"""Add the TF prefix"""
+            #prefix = ""
+            #prefix_param = rospy.search_param('tf_prefix')
+            #if prefix_param:
+                #prefix = rospy.get_param(prefix_param)
+                #if prefix[0] != "/":
+                    #prefix = "/%s" % prefix
+            #return "%s/%s" % (prefix, frame_id)
+        #else:
             return frame_id

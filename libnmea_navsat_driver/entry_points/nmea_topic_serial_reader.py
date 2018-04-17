@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Software License Agreement (BSD License)
 #
@@ -32,24 +32,38 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import rospy
+# TODO port nmea_topic_serial_reader
 
-from nmea_msgs.msg import Sentence
+#import serial
 
-import libnmea_navsat_driver.driver
+#import rospy
 
-def nmea_sentence_callback(nmea_sentence, driver):
-    try:
-        driver.add_sentence(nmea_sentence.sentence, frame_id=nmea_sentence.header.frame_id, timestamp=nmea_sentence.header.stamp)
-    except ValueError as e:
-        rospy.logwarn("Value error, likely due to missing fields in the NMEA message. Error was: %s. Please report this issue at github.com/ros-drivers/nmea_navsat_driver, including a bag file with the NMEA sentences that caused it." % e)
+#from nmea_msgs.msg import Sentence
+#from libnmea_navsat_driver.driver import RosNMEADriver
 
-if __name__ == '__main__':
-    rospy.init_node('nmea_topic_driver')
+#if __name__ == '__main__':
+    #rospy.init_node('nmea_topic_serial_reader')
 
-    driver = libnmea_navsat_driver.driver.RosNMEADriver()
+    #nmea_pub = rospy.Publisher("nmea_sentence", Sentence)
 
-    rospy.Subscriber("nmea_sentence", Sentence, nmea_sentence_callback,
-            driver)
+    #serial_port = rospy.get_param('~port','/dev/ttyUSB0')
+    #serial_baud = rospy.get_param('~baud',4800)
 
-    rospy.spin()
+    ## Get the frame_id
+    #frame_id = RosNMEADriver.get_frame_id()
+
+    #try:
+        #GPS = serial.Serial(port=serial_port, baudrate=serial_baud, timeout=2)
+        #while not rospy.is_shutdown():
+            #data = GPS.readline().strip()
+
+            #sentence = Sentence()
+            #sentence.header.stamp = rospy.get_rostime()
+	    #sentence.header.frame_id = frame_id
+            #sentence.sentence = data
+
+            #nmea_pub.publish(sentence)
+
+    #except rospy.ROSInterruptException:
+        #GPS.close() #Close GPS serial port
+

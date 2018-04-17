@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Software License Agreement (BSD License)
 #
@@ -32,28 +32,27 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import serial
+# TODO port nmea_topic_driver
 
-import rospy
+#import rospy
 
-import libnmea_navsat_driver.driver
+#from nmea_msgs.msg import Sentence
 
-if __name__ == '__main__':
-    rospy.init_node('nmea_serial_driver')
+#import libnmea_navsat_driver.driver
 
-    serial_port = rospy.get_param('~port','/dev/ttyUSB0')
-    serial_baud = rospy.get_param('~baud',4800)
-    frame_id = libnmea_navsat_driver.driver.RosNMEADriver.get_frame_id()
+#def nmea_sentence_callback(nmea_sentence, driver):
+    #try:
+        #driver.add_sentence(nmea_sentence.sentence, frame_id=nmea_sentence.header.frame_id, timestamp=nmea_sentence.header.stamp)
+    #except ValueError as e:
+        #rospy.logwarn("Value error, likely due to missing fields in the NMEA message. Error was: %s. Please report this issue at github.com/ros-drivers/nmea_navsat_driver, including a bag file with the NMEA sentences that caused it." % e)
 
-    try:
-        GPS = serial.Serial(port=serial_port, baudrate=serial_baud, timeout=2)
-        driver = libnmea_navsat_driver.driver.RosNMEADriver()
-        while not rospy.is_shutdown():
-            data = GPS.readline().strip()
-            try:
-                driver.add_sentence(data, frame_id)
-            except ValueError as e:
-                rospy.logwarn("Value error, likely due to missing fields in the NMEA message. Error was: %s. Please report this issue at github.com/ros-drivers/nmea_navsat_driver, including a bag file with the NMEA sentences that caused it." % e)
+#if __name__ == '__main__':
+    #rospy.init_node('nmea_topic_driver')
 
-    except rospy.ROSInterruptException:
-        GPS.close() #Close GPS serial port
+    #driver = libnmea_navsat_driver.driver.RosNMEADriver()
+
+    #rospy.Subscriber("nmea_sentence", Sentence, nmea_sentence_callback,
+            #driver)
+
+    #rospy.spin()
+

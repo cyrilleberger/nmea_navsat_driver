@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 # Software License Agreement (BSD License)
 #
@@ -32,35 +32,44 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import serial
+def nmea_serial_driver():
+    import serial
 
-import rospy
+    import rclpy
+    import rclpy.utilities
+    import rclpy.exceptions
+    import argparse
 
-from nmea_msgs.msg import Sentence
-from libnmea_navsat_driver.driver import RosNMEADriver
+    import libnmea_navsat_driver.driver
+    
+    rclpy.init()
+    
+    parser = argparse.ArgumentParser(description='driver for nmea GPS.')
+
+    parser.add_argument('--baud', type=int, nargs=1, default=4800)
+    parser.add_argument('--port', type=str, nargs=1, default='/dev/ttyUSB0')
+    parser.add_argument('--frame_id', type=str, nargs=1, default='gps')
+    parser.add_argument('--time_ref_source', type=str, nargs=1, default=None)
+    parser.add_argument('--useRMC', action='store_true', default=False)
+
+    args = parser.parse_args()
+
+    serial_port = args.port
+    serial_baud = args.baud
+    
+    frame_id = libnmea_navsat_driver.driver.RosNMEADriver.get_frame_id(args.frame_id)
+
+    GPS = serial.Serial(port=serial_port, baudrate=serial_baud, timeout=2)
+    driver = libnmea_navsat_driver.driver.RosNMEADriver(args.time_ref_source, args.useRMC)
+    while rclpy.utilities.ok():
+        data = GPS.readline().strip()
+        try:
+            driver.add_sentence(data, frame_id)
+            rclpy.spin_once(driver)
+        except ValueError as e:
+            driver.get_logger().warn("Value error, likely due to missing fields in the NMEA message. Error was: %s. Please report this issue at github.com/ros-drivers/nmea_navsat_driver, including a bag file with the NMEA sentences that caused it." % e)
+
+    GPS.close() #Close GPS serial port
 
 if __name__ == '__main__':
-    rospy.init_node('nmea_topic_serial_reader')
-
-    nmea_pub = rospy.Publisher("nmea_sentence", Sentence)
-
-    serial_port = rospy.get_param('~port','/dev/ttyUSB0')
-    serial_baud = rospy.get_param('~baud',4800)
-
-    # Get the frame_id
-    frame_id = RosNMEADriver.get_frame_id()
-
-    try:
-        GPS = serial.Serial(port=serial_port, baudrate=serial_baud, timeout=2)
-        while not rospy.is_shutdown():
-            data = GPS.readline().strip()
-
-            sentence = Sentence()
-            sentence.header.stamp = rospy.get_rostime()
-	    sentence.header.frame_id = frame_id
-            sentence.sentence = data
-
-            nmea_pub.publish(sentence)
-
-    except rospy.ROSInterruptException:
-        GPS.close() #Close GPS serial port
+    nmea_serial_driver()
