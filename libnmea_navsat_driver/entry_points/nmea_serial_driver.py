@@ -49,6 +49,7 @@ def nmea_serial_driver():
     parser.add_argument('--frame_id', type=str, default='gps')
     parser.add_argument('--time_ref_source', type=str, default=None)
     parser.add_argument('--useRMC', action='store_true', default=False)
+    parser.add_argument('--namespace', type=str, default="")
     parser.add_argument('rosargs', type=str, nargs='+')
 
     args = parser.parse_args()
@@ -61,7 +62,7 @@ def nmea_serial_driver():
     frame_id = libnmea_navsat_driver.driver.RosNMEADriver.get_frame_id(args.frame_id)
 
     GPS = serial.Serial(port=serial_port, baudrate=serial_baud, timeout=2)
-    driver = libnmea_navsat_driver.driver.RosNMEADriver(args.time_ref_source, args.useRMC)
+    driver = libnmea_navsat_driver.driver.RosNMEADriver(args.time_ref_source, args.useRMC, args.namespace)
     while rclpy.utilities.ok():
         data = GPS.readline().strip()
         try:

@@ -48,8 +48,8 @@ import builtin_interfaces.msg
 
 
 class RosNMEADriver(rclpy.node.Node):
-    def __init__(self, time_ref_source, use_RMC):
-        super().__init__('RosNMEADriver')
+    def __init__(self, time_ref_source, use_RMC, namespace):
+        super().__init__('RosNMEADriver', namespace)
         self.fix_pub = self.create_publisher(NavSatFix, 'fix')
         self.vel_pub = self.create_publisher(TwistStamped, 'vel')
         self.time_ref_pub = self.create_publisher(TimeReference, 'time_reference')
